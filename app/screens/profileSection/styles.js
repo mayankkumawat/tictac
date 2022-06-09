@@ -37,6 +37,7 @@ export const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: wp(5),
+    paddingVertical: wp(5),
   },
   photoSection: {
     marginVertical: wp(5),
@@ -68,7 +69,7 @@ export const styles = StyleSheet.create({
     marginEnd: wp(5),
   },
   saveBtn: {
-    marginTop: hp(10),
+    marginTop: hp(8),
     marginBottom: hp(5),
     width: wp(50),
     height: hp(5),
@@ -79,5 +80,12 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.WHITE,
     backgroundColor: colors.BLACK + '60',
+  },
+  aboutInput: {
+    textAlignVertical: 'top',
+    height: hp(11),
+  },
+  aboutContainer: {
+    height: hp(15),
   },
 });

@@ -10,13 +10,16 @@ import {
 import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {createThumbnail} from 'react-native-create-thumbnail';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {styles} from './styles';
 import {colors} from '../../constants';
 import Icon from '../../assets/icons/Icon';
-import {wp} from '../../helpers/resDimension';
+import {hp, wp} from '../../helpers/resDimension';
 import RNText from '../../components/RNText/RNText';
+import {CountryPicker, DatePick, DropDown, Input} from '../../components';
 
 const cameraIcon = (
   <Icon
@@ -63,30 +66,43 @@ const ProfileUpdate = () => {
   const [video, setVideos] = useState([]);
   const [saving, setSaving] = useState(false);
   const [response, setResponse] = useState(null);
+  const [gender, setGender] = useState(0);
 
   const onButtonPress = React.useCallback(async () => {
-    const result = await launchCamera(options);
-    if (Object.keys(result) == 'assets') {
-      setResponse(result);
+    try {
+      const result = await launchCamera(options);
+      if (Object.keys(result) == 'assets') {
+        setResponse(result);
+      }
+    } catch (e) {
+      console.log(e);
     }
   }, []);
 
   const handlePhoto = async () => {
-    const result = await launchImageLibrary(options);
-    if (Object.keys(result) == 'assets') {
-      setImages(images.concat([result.assets[0]]));
+    try {
+      const result = await launchImageLibrary(options);
+      if (Object.keys(result) == 'assets') {
+        setImages(images.concat([result.assets[0]]));
+      }
+    } catch (e) {
+      console.log(e);
     }
   };
 
   const handleVideo = async () => {
-    const result = await launchImageLibrary(vdOptions);
-    if (Object.keys(result) == 'assets') {
-      const thumbnail = await createThumbnail({
-        url: result.assets[0].uri,
-        timeStamp: 10000,
-      });
-      result.assets[0].thumb = thumbnail;
-      setVideos(video.concat([result.assets[0]]));
+    try {
+      const result = await launchImageLibrary(vdOptions);
+      if (Object.keys(result) == 'assets') {
+        const thumbnail = await createThumbnail({
+          url: result.assets[0].uri,
+          timeStamp: 10000,
+        });
+        result.assets[0].thumb = thumbnail;
+        setVideos(video.concat([result.assets[0]]));
+      }
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -124,6 +140,29 @@ const ProfileUpdate = () => {
           colors={[colors.WHITE, colors.LIGHTPINK, colors.SKYBLUE]}
           style={styles.linearGradientContainer}>
           <View style={styles.container}>
+            <View style={styles.inputSection}>
+              <Input req label={'Name'} />
+              <DropDown
+                req
+                label={'Gender'}
+                data={[
+                  {label: 'Male', value: 0},
+                  {label: 'Female', value: 1},
+                  {label: 'Other', value: 2},
+                ]}
+                netValue={gender}
+                onChangeValue={setGender}
+              />
+              <DatePick req />
+              <CountryPicker />
+              <Input
+                label={'About'}
+                multiline={true}
+                containerStyle={styles.aboutContainer}
+                style={styles.aboutInput}
+                numberOfLines={4}
+              />
+            </View>
             <View style={styles.photoSection}>
               <RNText style={styles.sectionHeading}>Photos</RNText>
               <RNText style={styles.sectionSubHeading}>
@@ -135,9 +174,10 @@ const ProfileUpdate = () => {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{flexDirection: 'row'}}>
                   {images.length
-                    ? images.map(({uri}) => {
+                    ? images.map(({uri}, index) => {
                         return (
                           <Image
+                            key={index}
                             source={{uri: uri}}
                             style={styles.imageSquare}
                           />
@@ -164,9 +204,10 @@ const ProfileUpdate = () => {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{flexDirection: 'row'}}>
                   {video.length
-                    ? video.map(({thumb}) => {
+                    ? video.map(({thumb}, index) => {
                         return (
                           <Image
+                            key={index}
                             source={{uri: thumb?.path}}
                             style={styles.imageSquare}
                           />
@@ -182,7 +223,16 @@ const ProfileUpdate = () => {
                 </ScrollView>
               </View>
             </View>
-            <TouchableOpacity activeOpacity={0.5} style={styles.saveBtn}>
+            <TouchableOpacity
+              disabled={saving}
+              activeOpacity={0.5}
+              style={styles.saveBtn}
+              onPress={() => {
+                setSaving(true);
+                setTimeout(() => {
+                  setSaving(false);
+                }, 2000);
+              }}>
               {saving ? (
                 <ActivityIndicator size="small" color={colors.WHITE} />
               ) : (
