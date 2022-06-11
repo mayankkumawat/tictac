@@ -26,7 +26,6 @@ const DatePick = ({req, label = 'Date of birth'}) => {
     showMode('date');
   };
 
-  console.log(date);
   return (
     <TouchableOpacity
       activeOpacity={0.6}
