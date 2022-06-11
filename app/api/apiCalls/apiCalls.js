@@ -1,8 +1,9 @@
 import ApiUrl from '../axios/url';
+import {token} from '../axios/token';
 import fireApi from '../axios/fireApi';
 
 export const ApiService = {
-  profileDetails: async () => {
+  profileDetails: async payload => {
     return fireApi({
       method: 'GET',
       authToken: true,
@@ -23,6 +24,13 @@ export const ApiService = {
       data: payload,
       authToken: true,
       URL: `${ApiUrl.videosUpload}`,
+      header: {
+        headers: {
+          Authorization: token,
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'multipart/form-data',
+        },
+      },
     });
   },
   profileUpdate: async payload => {

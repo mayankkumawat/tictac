@@ -6,15 +6,19 @@ import {StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import {colors} from '../../constants';
 import {wp, fp, hp} from '../../helpers/resDimension';
 
-const DatePick = ({req, label = 'Date of birth'}) => {
-  const [date, setDate] = useState(new Date());
+const DatePick = ({
+  req,
+  callback,
+  val = new Date(),
+  label = 'Date of birth',
+}) => {
   const [mode, setMode] = useState('date');
   const [show, setShow] = useState(false);
 
   const onChange = (event, selectedDate) => {
     const currentDate = selectedDate;
     setShow(false);
-    setDate(currentDate);
+    callback(currentDate);
   };
 
   const showMode = currentMode => {
@@ -35,12 +39,12 @@ const DatePick = ({req, label = 'Date of birth'}) => {
         {label}
         <Text style={styles.star}>{req && ' *'}</Text>
       </Text>
-      <Text style={styles.date}>{moment(date).format('DD/MM/YYYY')}</Text>
+      <Text style={styles.date}>{moment(val).format('DD/MM/YYYY')}</Text>
       {/* only render if you want to show datetime picker modal, otherwise don't render it */}
       {show && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={date}
+          value={val}
           mode={mode}
           is24Hour={true}
           onChange={onChange}

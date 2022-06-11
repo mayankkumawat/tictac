@@ -22,6 +22,7 @@ export default function fireApi({method, URL, data, header, authToken}) {
     if (header) {
       headers = header;
     }
+    console.log(headers);
     return axios.post(URL, data, headers).then(
       res => {
         return res;
@@ -80,6 +81,32 @@ export default function fireApi({method, URL, data, header, authToken}) {
       },
       error => {
         return axios.delete(URL, headers);
+      },
+    );
+  } else if (method === 'PUT') {
+    let headers = {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+      },
+    };
+    if (authToken) {
+      headers = {
+        headers: {
+          ...headers.headers,
+          Authorization: `${token}`,
+        },
+      };
+    }
+    if (header) {
+      headers = header;
+    }
+    return axios.put(URL, data, headers).then(
+      res => {
+        return res;
+      },
+      error => {
+        return axios.post(URL, data, headers);
       },
     );
   }

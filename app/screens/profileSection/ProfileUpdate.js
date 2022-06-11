@@ -7,19 +7,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
+import {useToast} from 'react-native-toast-notifications';
 import {createThumbnail} from 'react-native-create-thumbnail';
-import DateTimePicker from '@react-native-community/datetimepicker';
-
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
+import {
+  Input,
+  RNText,
+  Loader,
+  DatePick,
+  DropDown,
+  CountryPicker,
+} from '../../components';
 import {styles} from './styles';
-import {colors} from '../../constants';
+import {ApiService} from '../../api';
 import Icon from '../../assets/icons/Icon';
-import {hp, wp} from '../../helpers/resDimension';
-import RNText from '../../components/RNText/RNText';
-import {CountryPicker, DatePick, DropDown, Input} from '../../components';
+import {wp} from '../../helpers/resDimension';
+import {isValidUrl} from '../../helpers/helpers';
+import {colors, constants} from '../../constants';
 
 const cameraIcon = (
   <Icon
@@ -49,10 +56,11 @@ const pinkShadow = [
 ];
 
 const options = {
+  quality: 0.3,
   cameraType: 'front',
   saveToPhotos: true,
   mediaType: 'photo',
-  includeBase64: false,
+  includeBase64: true,
 };
 
 const vdOptions = {
@@ -62,75 +70,162 @@ const vdOptions = {
 };
 
 const ProfileUpdate = () => {
-  const [images, setImages] = useState([]);
+  const toast = useToast();
+  const [user, setUser] = useState({});
   const [video, setVideos] = useState([]);
+  const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [response, setResponse] = useState(null);
-  const [gender, setGender] = useState(0);
+  const [loader, setLoader] = useState(false);
 
-  const onButtonPress = React.useCallback(async () => {
+  const handleChange = (key, value) => {
+    setUser({...user, [key]: value});
+  };
+
+  const onAvatar = async () => {
     try {
       const result = await launchCamera(options);
       if (Object.keys(result) == 'assets') {
-        setResponse(result);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
-
-  const handlePhoto = async () => {
-    try {
-      const result = await launchImageLibrary(options);
-      if (Object.keys(result) == 'assets') {
-        setImages(images.concat([result.assets[0]]));
+        handleChange(
+          'profile',
+          constants.base64Prefix + result?.assets[0]?.base64,
+        );
       }
     } catch (e) {
       console.log(e);
     }
   };
 
-  const handleVideo = async () => {
+  const handlePhoto = async () => {
+    setLoader(true);
     try {
+      const result = await launchImageLibrary(options);
+      if (Object.keys(result) == 'assets') {
+        await ApiService.imagesUpload({
+          file: constants.base64Prefix + result?.assets[0]?.base64,
+        }).then(res => {
+          setLoader(false);
+          if (res?.data?.status) {
+            toast.show('image uploaded', {type: 'success'});
+          }
+        });
+        setImages(images.concat([result.assets[0]]));
+      } else {
+        setLoader(false);
+      }
+    } catch (e) {
+      setLoader(false);
+      toast.show('something went wrong', {type: 'danger'});
+    }
+  };
+
+  const handleVideo = async () => {
+    setLoader(true);
+    try {
+      let formData = new FormData();
       const result = await launchImageLibrary(vdOptions);
       if (Object.keys(result) == 'assets') {
+        formData.append('video', {
+          uri: result?.assets[0]?.uri,
+          type: result?.assets[0]?.type,
+          name: result?.assets[0]?.fileName,
+        });
+        await ApiService.videosUpload(formData).then(res => {
+          if (res?.data?.status) {
+            setLoader(false);
+            console.log(res);
+            toast.show('Video uploaded', {type: 'success'});
+          }
+        });
         const thumbnail = await createThumbnail({
           url: result.assets[0].uri,
           timeStamp: 10000,
         });
         result.assets[0].thumb = thumbnail;
         setVideos(video.concat([result.assets[0]]));
+      } else {
+        setLoader(false);
+        toast.show('something went wrong', {type: 'danger'});
       }
     } catch (e) {
       console.log(e);
+      toast.show('something went wrong', {type: 'danger'});
+      setLoader(false);
     }
   };
+
+  const getProfile = async () => {
+    setLoader(true);
+    try {
+      let res = await ApiService.profileDetails();
+      if (res?.data?.status) {
+        setUser({
+          name: res?.data?.user?.name,
+          gender: res?.data?.user?.gender,
+          country: res?.data?.user?.country,
+          aboutLive: res?.data?.user?.aboutLive,
+          DateOfBirth: new Date(res?.data?.user?.DateOfBirth),
+          profile: constants.imageBaseUrl + res?.data?.user?.profile,
+        });
+        setLoader(false);
+      } else {
+        toast.show('something went wrong', {type: 'danger'});
+      }
+    } catch (error) {
+      toast.show('something went wrong', {type: 'danger'});
+      console.log(error);
+    }
+  };
+
+  const handleForm = async () => {
+    let userInstance = user;
+    if (isValidUrl(userInstance.profile)) {
+      delete userInstance.profile;
+    } else {
+      userInstance.file = userInstance.profile;
+      delete userInstance.profile;
+    }
+
+    try {
+      let res = await ApiService.profileUpdate(userInstance);
+      if (res?.data?.status) {
+        getProfile();
+        toast.show('Profile uploaded', {type: 'success'});
+      }
+    } catch (error) {
+      toast.show('something went wrong\n Please try again', {type: 'danger'});
+    }
+  };
+
+  useEffect(() => {
+    getProfile();
+  }, []);
 
   return (
     <>
       <StatusBar translucent={true} backgroundColor={colors.TRANSPARENT} />
+      {loader ? <Loader /> : null}
       <ScrollView>
         <ImageBackground
           blurRadius={5}
           resizeMode="cover"
           style={styles.image}
           source={{
-            uri: response
-              ? response?.assets[0]?.uri
+            uri: user?.profile
+              ? user?.profile
               : 'https://reactjs.org/logo-og.png',
           }}>
           <Image
             style={styles.avatar}
             source={{
-              uri: response
-                ? response?.assets[0]?.uri
+              uri: user?.profile
+                ? user?.profile
                 : 'https://reactjs.org/logo-og.png',
             }}
           />
           <TouchableOpacity
             activeOpacity={0.5}
             style={styles.camera}
-            onPress={onButtonPress}>
+            onPress={onAvatar}>
             {cameraIcon}
           </TouchableOpacity>
         </ImageBackground>
@@ -141,26 +236,39 @@ const ProfileUpdate = () => {
           style={styles.linearGradientContainer}>
           <View style={styles.container}>
             <View style={styles.inputSection}>
-              <Input req label={'Name'} />
+              <Input
+                req
+                label={'Name'}
+                value={user.name}
+                onChangeText={arg => handleChange('name', arg)}
+              />
               <DropDown
                 req
                 label={'Gender'}
                 data={[
-                  {label: 'Male', value: 0},
-                  {label: 'Female', value: 1},
-                  {label: 'Other', value: 2},
+                  {label: 'Male', value: 'male'},
+                  {label: 'Female', value: 'female'},
                 ]}
-                netValue={gender}
-                onChangeValue={setGender}
+                netValue={user?.gender}
+                onChangeValue={arg => handleChange('gender', arg)}
               />
-              <DatePick req />
-              <CountryPicker />
+              <DatePick
+                req
+                val={user?.DateOfBirth}
+                callback={arg => handleChange('DateOfBirth', arg)}
+              />
+              <CountryPicker
+                country={user?.country}
+                callback={arg => handleChange('country', arg)}
+              />
               <Input
                 label={'About'}
                 multiline={true}
-                containerStyle={styles.aboutContainer}
-                style={styles.aboutInput}
                 numberOfLines={4}
+                value={user?.aboutLive}
+                style={styles.aboutInput}
+                containerStyle={styles.aboutContainer}
+                onChangeText={arg => handleChange('aboutLive', arg)}
               />
             </View>
             <View style={styles.photoSection}>
@@ -232,6 +340,7 @@ const ProfileUpdate = () => {
                 setTimeout(() => {
                   setSaving(false);
                 }, 2000);
+                handleForm();
               }}>
               {saving ? (
                 <ActivityIndicator size="small" color={colors.WHITE} />

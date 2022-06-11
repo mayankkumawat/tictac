@@ -7,8 +7,7 @@ import RNText from '../RNText/RNText';
 import Icon from '../../assets/icons/Icon';
 import {fp, hp, wp} from '../../helpers/resDimension';
 
-const CountryPicker = () => {
-  const [country, setCountry] = useState('India');
+const CountryPicker = ({country = 'India', callback}) => {
   const [withFlag, setWithFlag] = useState(true);
   const [callingCode, setCallingCode] = useState('');
   const [countryCode, setCountryCode] = useState('IN');
@@ -16,7 +15,7 @@ const CountryPicker = () => {
   const [withCallingCode, setWithCallingCode] = useState(true);
 
   const onSelect = Country => {
-    setCountry(Country?.name);
+    callback(Country?.name);
     setCountryCode(Country?.cca2);
     setCallingCode(Country?.callingCode);
     setWithCallingCode(Country?.withCallingCode);
