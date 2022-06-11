@@ -1,14 +1,14 @@
 import {StyleSheet} from 'react-native';
-import {colors} from '../../constants';
 
+import {colors} from '../../constants';
 import {fp, hp, wp} from '../../helpers/resDimension';
 
 export const styles = StyleSheet.create({
   image: {
     width: wp(100),
     height: hp(40),
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
     width: wp(40),

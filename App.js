@@ -7,10 +7,16 @@
  */
 
 import React from 'react';
+import {ToastProvider} from 'react-native-toast-notifications';
+
 import ProfileUpdate from './app/screens/profileSection/ProfileUpdate';
 
 const App = () => {
-  return <ProfileUpdate />;
+  return (
+    <ToastProvider placement={'bottom'} duration={2000} animationType="zoom-in">
+      <ProfileUpdate />
+    </ToastProvider>
+  );
 };
 
 export default App;
